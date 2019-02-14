@@ -2,17 +2,21 @@
 #          add quantities of items at any point, and then make bills for however many customers and add
 #          up the bill total in the end
 #
-# TODO:       -multiple server login 
-#             -print total nights sales for each server and whole team
+# TODO:       -print total nights sales for each server and whole team
 #             -comp items in bill 
 
 
 ##### DATA HELD HERE #####
 class tableData():
     currentTable = ''
+    currentServer = 'madison'
 
-# CUSTOMER TABLE LIST
-tables = {'B1':{'fish':2, 'monkey brains':1}, 'B3':{}}
+    servers = {'madison':{
+                        'B1':{'fish':2},
+                        'B3':{'monkey brains':2, 'fish':1}
+                        }, 
+               'chubbs':{}}
+
 
 # ITEM/PRICE LIST
 menuItems = {'fish':10.50, 'monkey brains':25.99}
@@ -24,20 +28,44 @@ itemCounts = {'fish':3}
 
 ##### TABLE MENU FUNCTIONS #####
 
+# SERVER MENU - view servers.  
+def serverMenu():
+    while True:
+        print('\n> SERVERS:')
+        serverList = list(tableData.servers.keys())
+        for server in range(len(serverList)):
+            print('-'+serverList[server])
+        print('\n-add')
+        serverInput = input('\n> ')
+        if serverInput.lower() == 'add':
+            addServer()
+        elif serverInput.lower() not in serverList:
+            print('\n> INVALID SERVER')
+            input()
+        else:
+            break
+    return serverInput
+
 # Main Menu - view customer tables
 def mainMenu():
     print(' ENTER TABLE NAME or ADD TABLE:')
-    for i in tables.keys():
+    for i in tableData.servers[tableData.currentServer].keys(): 
         print('-'+i)
     print('-add')
     userInput = input('> ')
     return userInput
 
+# Add new servers
+def addServer():
+    serverName = input('\n> SERVER NAME: ')
+    tableData.servers[serverName.lower()] = {}
+
 
 # ADD CUSTOMER TABLE
 def addTable():
     newTable = input(' TABLE NAME: ')
-    tables[newTable.upper()] = {}
+    tableData.servers[tableData.currentServer][newTable.upper()] = {} #= {newTable:{}}
+    #print(tableData.servers[tableData.currentServer])
 
 
 
@@ -72,6 +100,7 @@ def menuInput():
                     print('>ITEM COUNT: '+str(itemCounts[userInput.lower()]))
 
             quantity = int(input('-QUANTITY: '))
+            
             #make sure the count is higher than the quantity
             if userInput.lower() in itemCounts.keys() and quantity > itemCounts[userInput.lower()]:
                 print('>QUANTITY TOO HIGH FOR COUNT')
@@ -80,14 +109,17 @@ def menuInput():
             
             #add the item to the bill
             try:
-                if userInput not in tables[tableData.currentTable].keys():
-                    tables[tableData.currentTable][userInput] = quantity
+                if userInput not in list(tableData.servers[tableData.currentServer][tableData.currentTable].keys()):
+                    tableData.servers[tableData.currentServer][tableData.currentTable]
+                    tableData.servers[tableData.currentServer][tableData.currentTable][userInput] = quantity
                 else:
-                    tables[tableData.currentTable][userInput] += quantity
+                    tableData.servers[tableData.currentServer][tableData.currentTable][userInput] += quantity
                     itemCounts[userInput.lower()] -= quantity
             except ValueError:
                 print('\n>QUANTITY MUST BE NUMBER ONLY')
                 input()
+        elif userInput.lower() == 'total':
+            print('\n'+('TOTAL SALES FOR NIGHT').center(33))
 
 
 # ADD ITEM+PRICE
@@ -127,7 +159,7 @@ def addCount():
 def printTicket(tableName):
     ticketTotal = 0.0
     print()
-    for key, value in tables[tableName].items():
+    for key, value in tableData.servers[tableData.currentServer][tableData.currentTable].items():
         if value == 1:
             # single items
             print(('- '+str(value)+' '+key).ljust(25, ' ')+('${:,.2f}'.format(menuItems[key])).rjust(10))
@@ -146,13 +178,14 @@ def printTicket(tableName):
 ##### RUN AND OUTPUT HERE #####
 def mainLoop():
     while True:
+        server = serverMenu()
+        tableData.currentServer = server
         userInput = mainMenu()
         if userInput.lower() == 'add':
             addTable()
-        elif userInput.upper() in tables.keys():
+        elif userInput.upper() in list(tableData.servers[tableData.currentServer].keys()):
             tableData.currentTable = userInput.upper()
             menuInput()
-        #TODO ADD ELSE HERE
         else:
             print('\n>ENTER VALID INPUT')
             
