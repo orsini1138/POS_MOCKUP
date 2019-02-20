@@ -2,27 +2,27 @@
 #          add quantities of items at any point, and then make bills for however many customers and add
 #          up the bill total in the end
 #
-# TODO:       -print total nights sales for each server and whole team
-#             -comp items in bill 
+# TODO:     -comp items in bill 
+#
 
 
 ##### DATA HELD HERE #####
 class tableData():
     currentTable = ''
-    currentServer = 'madison'
+    currentServer = ''
 
     servers = {'madison':{
-                        'B1':{'fish':2},
+                        'B1':{'fish':99},
                         'B3':{'monkey brains':2, 'fish':1}
                         }, 
-               'chubbs':{}}
+                'chubbs':{}}
 
 
 # ITEM/PRICE LIST
 menuItems = {'fish':10.50, 'monkey brains':25.99}
 
 # ITEM COUNTS
-itemCounts = {'fish':3}
+itemCounts = {}#'fish':3}
 
 
 
@@ -35,10 +35,12 @@ def serverMenu():
         serverList = list(tableData.servers.keys())
         for server in range(len(serverList)):
             print('-'+serverList[server])
-        print('\n-add')
+        print('\n-add server')
         serverInput = input('\n> ')
         if serverInput.lower() == 'add':
             addServer()
+        elif serverInput.lower() == 'total':
+            salesTotalsAll()
         elif serverInput.lower() not in serverList:
             print('\n> INVALID SERVER')
             input()
@@ -48,10 +50,10 @@ def serverMenu():
 
 # Main Menu - view customer tables
 def mainMenu():
-    print(' ENTER TABLE NAME or ADD TABLE:')
+    print('\n>>ENTER TABLE / ADD TABLE / [enter] to return')
     for i in tableData.servers[tableData.currentServer].keys(): 
-        print('-'+i)
-    print('-add')
+        print(' -'+i)
+    print(' -add')
     userInput = input('> ')
     return userInput
 
@@ -63,10 +65,47 @@ def addServer():
 
 # ADD CUSTOMER TABLE
 def addTable():
-    newTable = input(' TABLE NAME: ')
+    newTable = input('\n TABLE NAME: ')
     tableData.servers[tableData.currentServer][newTable.upper()] = {} #= {newTable:{}}
-    #print(tableData.servers[tableData.currentServer])
 
+
+
+# CALCULATE TOTAL SALES OF ONE SERVER
+def salesTotals():
+    totalSales = 0.0
+    tableList = list(tableData.servers[tableData.currentServer].keys())
+    for i in range(len(tableList)):
+        for key, value in tableData.servers[tableData.currentServer][tableList[i]].items():
+            totalSales += menuItems[key]*value
+
+    print('\n> TOTAL SALES FOR '+ tableData.currentServer+':\n'+ ('${:,.2f}'.format(totalSales)).center(33)+'\n')
+    input()
+
+
+def salesTotalsAll():
+    serverSales = {}
+    totalSales = 0.0
+
+    #get list of all servers
+    serverList = list(tableData.servers.keys())
+    for server in range(len(serverList)):
+        serverName = serverList[server]
+        serverTotal = 0.0
+        serverTables =  list(tableData.servers[serverName.lower()].keys())
+        for i in range(len(serverTables)):
+            for key, value in tableData.servers[serverName][serverTables[i]].items():
+                serverTotal += menuItems[key]*value
+        serverSales[serverName] = float(serverTotal)
+    
+    #calculate total
+    for key, value in serverSales.items():
+        totalSales += value
+    
+    #format for printing
+    print('\n> TOTAL SALES:   ${:,.2f}'.format(totalSales))
+    for key, value in serverSales.items():
+        print(('-'+key).ljust(12)+('${:,.2f}'.format(value)).rjust(14))
+    input()
 
 
 ##### FOOD MENU FUNCTIONS #####
@@ -74,10 +113,10 @@ def addTable():
 # ADD ITEM TO CUSTOMER BILL
 def menuInput():
     while True:
-        print('\n>>ENTER item name, -add, -rm, -bill, -ct or -done<<')
+        print('\n>>ENTER item name, -add, -rm, -bill, -ct or  -done<<')
         for i in menuItems.keys():
             print('-'+i)
-        userInput = input('> ')
+        userInput = input('\n> ')
         if userInput.lower() == 'done':
             break
         elif userInput.lower() == 'add':
@@ -92,8 +131,8 @@ def menuInput():
             if userInput.lower() in itemCounts.keys():
                 #check if its 86d
                 if itemCounts[userInput.lower()] == 0:
-                    print('>THIS ITEM HAS BEEN 86\'d')
-                    input('>')
+                    print('\n>THIS ITEM HAS BEEN 86\'d')
+                    input()
                     break
                 else:
                     #otherwise print count and ask for quantity
@@ -152,7 +191,7 @@ def addCount():
         input('>')
     else:
         itemCount = input('>ITEM COUNT: ')
-        itemCounts[itemToAdd] = int(itemCount)
+        itemCounts[itemToAdd.lower()] = int(itemCount)
 
 
 # Return table bill
@@ -162,11 +201,11 @@ def printTicket(tableName):
     for key, value in tableData.servers[tableData.currentServer][tableData.currentTable].items():
         if value == 1:
             # single items
-            print(('- '+str(value)+' '+key).ljust(25, ' ')+('${:,.2f}'.format(menuItems[key])).rjust(10))
+            print(('- '+str(value)+' '+key).ljust(25, ' ')+('${:,.2f}'.format(menuItems[key])).rjust(15))
             ticketTotal += menuItems[key]
         else:
             #if multiple of item
-            print(('- '+str(value)+' '+key+' @ $'+str(menuItems[key])).ljust(25, ' ')+('${:,.2f}'.format(menuItems[key]*value)).rjust(10))
+            print(('- '+str(value)+' '+key+' @ $'+str(menuItems[key])).ljust(25, ' ')+('${:,.2f}'.format(menuItems[key]*value)).rjust(15))
             ticketTotal += menuItems[key]*value
     
     #print total
@@ -177,17 +216,27 @@ def printTicket(tableName):
 
 ##### RUN AND OUTPUT HERE #####
 def mainLoop():
+    serverInUse = False
     while True:
-        server = serverMenu()
+        if serverInUse == False:
+            server = serverMenu()
         tableData.currentServer = server
         userInput = mainMenu()
         if userInput.lower() == 'add':
             addTable()
+            serverInUse = True
+        elif userInput.lower() == 'total':
+            salesTotals()
+            serverInUse = True
         elif userInput.upper() in list(tableData.servers[tableData.currentServer].keys()):
             tableData.currentTable = userInput.upper()
             menuInput()
+        elif userInput.lower() == '':
+            serverInUse = False
         else:
             print('\n>ENTER VALID INPUT')
+            serverInUse = False
+            input()
             
 
 mainLoop()
