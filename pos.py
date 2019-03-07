@@ -2,8 +2,7 @@
 #          add quantities of items at any point, and then make bills for however many customers and add
 #          up the bill total in the end
 #
-# TODO:     -comp items in bill 
-#
+# TODO:     -make comping items show comped items on the bill
 
 
 ##### DATA HELD HERE #####
@@ -113,7 +112,7 @@ def salesTotalsAll():
 # ADD ITEM TO CUSTOMER BILL
 def menuInput():
     while True:
-        print('\n>>ENTER item name, -add, -rm, -bill, -ct or  -done<<')
+        print('\n>>ENTER item name, -add, -rm, -bill, -comp, -ct or  -done<<')
         for i in menuItems.keys():
             print('-'+i)
         userInput = input('\n> ')
@@ -127,6 +126,8 @@ def menuInput():
             addCount()
         elif userInput.lower() == 'bill':
             printTicket(tableData.currentTable)
+        elif userInput.lower() == 'comp':
+            compItems()
         elif userInput.lower() in menuItems.keys():
             if userInput.lower() in itemCounts.keys():
                 #check if its 86d
@@ -157,8 +158,8 @@ def menuInput():
             except ValueError:
                 print('\n>QUANTITY MUST BE NUMBER ONLY')
                 input()
-        elif userInput.lower() == 'total':
-            print('\n'+('TOTAL SALES FOR NIGHT').center(33))
+        #elif userInput.lower() == 'total':
+        #    print('\n'+('TOTAL SALES FOR NIGHT').center(33))
 
 
 # ADD ITEM+PRICE
@@ -182,6 +183,56 @@ def removeItem():
     else:
         print('\n>ITEM NOT IN MENU')
         input()
+
+
+# COMP ITEMS ON BILLS
+def compItems():
+    print()
+
+    # print out items list
+    for key, value in tableData.servers[tableData.currentServer][tableData.currentTable].items():
+        if value == 1:
+            # single items
+            print(('- '+str(value)+' '+key).ljust(25, ' ')+('${:,.2f}'.format(menuItems[key])).rjust(15))
+        else:
+            #if multiple of item
+            print(('- '+str(value)+' '+key+' @ $'+str(menuItems[key])).ljust(25, ' ')+('${:,.2f}'.format(menuItems[key]*value)).rjust(15))
+    
+    # comp items here
+    while True:
+        itemToComp = input('\n> Item to comp: ')
+        
+        # make sure chosen item is in table bill
+        if itemToComp not in tableData.servers[tableData.currentServer][tableData.currentTable].keys():
+            print('\n> ITEM NOT IN BILL')
+            input()
+            continue
+        
+        # check if there's multiple of item on bill
+        if tableData.servers[tableData.currentServer][tableData.currentTable][itemToComp] > 1:
+            compQuantity = input('\n> Quantity to comp: ')
+            
+            # make sure input is valid quantity
+            if int(compQuantity) > tableData.servers[tableData.currentServer][tableData.currentTable][itemToComp]:
+                print('\n> INVALID QUANTITY')
+                input()
+                continue
+            
+            # remove quantity from bill
+            tableData.servers[tableData.currentServer][tableData.currentTable][itemToComp] -= int(compQuantity)
+           
+            # if quantity is 0, remove entirely from bill
+            if tableData.servers[tableData.currentServer][tableData.currentTable][itemToComp] == 0:
+                del tableData.servers[tableData.currentServer][tableData.currentTable][itemToComp]
+            break
+        
+        
+        else:
+            #remove single item entirely from bill
+            del tableData.servers[tableData.currentServer][tableData.currentTable][itemToComp]
+            break
+
+
 
 # ADD COUNT
 def addCount():
@@ -209,6 +260,9 @@ def printTicket(tableName):
             ticketTotal += menuItems[key]*value
     
     #print total
+    if ticketTotal >= 200.0:
+        print('- 20% gratuity of ${:,.2f}'.format(ticketTotal*0.2))
+        ticketTotal+= ticketTotal*0.2
     print('\n'+('TOTAL = ${:,.2f}'.format(ticketTotal)).center(33)+'\n')
     input('>')
 
